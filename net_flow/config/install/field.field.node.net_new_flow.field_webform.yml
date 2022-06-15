@@ -1,0 +1,36 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_webform
+    - node.type.net_new_flow
+    - webform.webform.generate_system_number_form_1_
+  module:
+    - disable_field
+    - webform
+third_party_settings:
+  disable_field:
+    add_disable: none
+    edit_disable: none
+id: node.net_new_flow.field_webform
+field_name: field_webform
+entity_type: node
+bundle: net_new_flow
+label: Webform
+description: ''
+required: false
+translatable: true
+default_value:
+  -
+    default_data: ''
+    status: open
+    open: ''
+    close: ''
+    target_uuid: 2b7fc313-14f2-41b9-a4a6-1afe9e4473e8
+default_value_callback: ''
+settings:
+  handler: 'default:webform'
+  handler_settings:
+    target_bundles: null
+    auto_create: false
+field_type: webform

@@ -1,0 +1,1554 @@
+<?php
+
+/**
+ * @file
+ * Provides an example that shows how to create a Webform composite.
+ */
+
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\HtmlCommand;
+use Drupal\Core\Ajax\InvokeCommand;
+use Drupal\Core\Ajax\OpenModalDialogCommand;
+use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\maestro\Engine\MaestroEngine;
+use Drupal\taxonomy\Entity\Term;
+use Drupal\user\Entity\User;
+use Drupal\Core\Url;
+use Drupal\Core\Ajax\RedirectCommand;
+
+module_load_include('inc', 'webform', 'includes/webform.theme.template');
+
+/*
+ * Sets current medical area & current facility to Electronics Place
+ */
+function set_to_warehouse(&$form){
+  $form['elements']['net_new_process_information']['current_facility']["#access"] = true;
+  $form["elements"]["net_new_process_information"]["current_medical_area"]["#default_value"] = 'REGIONAL OFFICES';
+  $form['elements']['net_new_process_information']['current_facility']['#default_value'] = '4580 ELECTRONICS PLACE';
+}
+
+function changeReadAtHome(&$form, $formState){
+  $response = new AjaxResponse();
+  $value = $form["elements"]["system_information"]["read_at_home"]["#value"];
+  $form["elements"]["net_new_process_information"]["target_delivery_date_to_site"]["#required"] = true;
+  $target_to_site = "Target Delivery Date to";
+
+  switch($value){
+    case "Yes":
+      $home = "Home Office";
+      $form["elements"]["location"]["room_label"]["#title"] = "Provider Name";
+      $form["elements"]["net_new_process_information"]["target_delivery_date_to_site"]["#title"] =
+        $target_to_site . " " . $home;
+      //set Read at Home to "Home Office" and disable the select
+      $form["elements"]["location"]["architectural_room_number"]["room_id"]["select"]["#value"] =
+      $form["elements"]["location"]["architectural_room_number"]["room_id"]["other"]["#value"] = $home;
+      break;
+    default:
+      $form["elements"]["location"]["room_label"]["#title"] = "Room Label";
+      $form["elements"]["net_new_process_information"]["target_delivery_date_to_site"]["#title"] = $target_to_site . " Site";
+      break;
+  }
+
+  /*
+   * return form elements:
+   * - architectural room
+   * - room_label
+   * - target_delivery_date_to_site
+   */
+  $response->addCommand(new ReplaceCommand("#edit-output", $form["elements"]["location"]["architectural_room_number"]));
+  $response->addCommand(new ReplaceCommand(".form-item-room-label", $form["elements"]["location"]["room_label"]));
+  $response->addCommand(new ReplaceCommand(".form-item-target-delivery-date-to-site",
+    $form["elements"]["net_new_process_information"]["target_delivery_date_to_site"]));
+  return $response;
+}
+
+// Load the taxonomy tree with special parameters with key as id.
+function getOptionsById ($vid, $parent = 0, $max_depth = 1, $load_entities = FALSE){
+  $man_terms = getTaxonomy($vid);
+  $result = array();
+
+  // Empty value
+  $result['All'] = t('- Select -');
+
+  foreach($man_terms as $id => $term){
+    $result[$id] = $term;
+  }
+  return $result;
+}
+
+// Load the taxonomy tree with special parameters for Model.
+function getModelOptions($vid, $parent = 0, $max_depth = 1, $load_entities = FALSE)
+{
+  $manager = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+  // Load the taxonomy tree with special parameters.
+  $tree = $manager->loadTree(
+    'manufacturer',    // This is your taxonomy term vocabulary (machine name).
+    0,                 // This is "tid" of parent. Set "0" to get all.
+    2,                 // Get terms from 1st and 2nd levels.
+    FALSE              // Get full load of taxonomy term entity.
+  );
+
+  $term_data = [];
+
+  // Empty value
+  $term_data['All'] = t('- Select -');
+
+  // Get all manufacturers
+  $manufacturerArray = getOptionsByName('manufacturer');
+
+  foreach ($tree as $term) {
+    // We get 1st and 2nd level, also check against manufacturer array (1st level array).
+    if (!in_array($term->name, $manufacturerArray)) {
+      $term_data[$term->name] = $term->name;
+    }
+  }
+
+  return $term_data;
+}
+
+// Load the taxonomy tree with special parameters with key as name.
+function getOptionsByName ($vid, $parent = 0, $max_depth = 1, $load_entities = FALSE){
+  $terms =\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree($vid, $parent, $max_depth, $load_entities);
+  $term_data = [];
+  $term_data['All'] = t('- Select -');
+
+  foreach ($terms as $term) {
+    $term_data[$term->name] = $term->name;
+
+  }
+  return $term_data;
+}
+
+function setTaxonomyValue($field, $tid, FormStateInterface $formState){
+  $term= \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
+  $formState->setValue($field, $term->label());
+}
+
+function getTaxonomy($vid, $parent = 0, $max_depth = 1, $load_entities = FALSE){
+  $terms =\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree($vid, $parent, $max_depth, $load_entities);
+  $term_data = array();
+  foreach ($terms as $term) {
+    $term_data[(int)$term->tid] = $term->name;
+  }
+  return $term_data;
+}
+
+function getMobileorFixed(array &$form, FormStateInterface $formState){
+  $mobile_fixed = null;
+  $warranty = null;
+  $manufacturer_term = null;
+  $equipment_type = null;
+  $response = new AjaxResponse();
+
+  if($formState->getValue('model')){
+    $tid = $formState->getValue('model');
+    $term_obj = Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
+    $mobile_fixed = $term_obj->get('field_mobile_or_fixed')->value;
+    $warranty = $term_obj->get('field_warranty')->value;
+    $equipment_id = $term_obj->get('field_equipment_type')->target_id;
+    $equipment_taxonomy = Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($equipment_id);
+    $equipment_type = $equipment_taxonomy->get('name')->value;
+  }
+  $args = [
+    $mobile_fixed,
+    $warranty,
+    $equipment_type
+  ];
+  //calls javascript function in /bootstrap_miti/js/netnew/1.js
+  $response->addCommand(new InvokeCommand(NULL, 'myAjaxCallback', [$args]));
+  return $response;
+}
+
+/**
+ * Grabs medical_id value, loads all the facilities associated with that value
+ * returns the HTML content of id: 'dropdown_second_replace' element.
+ * @param array $form
+ * @param FormStateInterface $formState
+ * @return mixed
+ * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+ * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+ */
+function facility(array &$form, FormStateInterface $formState){
+  $response = new AjaxResponse();
+  $medical_area = $formState->getValue('medical_name');
+  $form["elements"]["location"]["facility_name"]['#value'] = '';
+
+  if(empty($medical_area)){
+    $form["elements"]["location"]["facility_name"]['#attributes']['disabled'] = 'disabled';
+  }
+
+  $fac_terms = getTaxonomy('medical_area', $medical_area);
+  $facilities[''] = t('- Select -');
+  foreach ($fac_terms as $id => $term) {
+    $facilities[$id] = $term;
+  }
+  $form["elements"]["location"]["facility_name"]["#options"] = $facilities;
+
+  $response->addCommand(new ReplaceCommand("#dropdown_second_replace",
+    $form["elements"]["location"]["facility_name"]));
+  return $response;
+}
+
+function getModel(array &$form, FormStateInterface $formState){
+  $manufacturer = $formState->getValue('manufacturer');
+  $man_terms = getTaxonomy('manufacturer', $manufacturer);
+
+  $content = "<label for=\"edit-model\" class=\"js-form-required form-required mt-auto col-3\">Model</label><select data-drupal-selector=\"edit-model\" id=\"edit-model\"
+name=\"model\" class=\"form-select required custom-select\"><option value=\"\" selected=\"selected\">- None -</option>";
+  foreach ($man_terms as $id => $term) {
+    $content .= "<option value='$id'>".$term."</option>";
+  }
+  $content .= '</select>';
+  $form['elements']['system_information']['manufacturer']['#value'] = $manufacturer;
+  $form["elements"]["system_information"]["manufacturer"]["#default_value"] = $manufacturer;
+
+  $response = new AjaxResponse();
+  $response->addCommand(new HtmlCommand('#' . 'model_container', $content));
+  $response->addCommand(new InvokeCommand(NULL, 'myManufacturer', []));
+  return $response;
+}
+
+/**
+ * Changes field elements when user selects model
+ *
+ * Callback for Model field
+ *
+ * @param array $form
+ *  The web form
+ * @param FormStateInterface $formState
+ *  Information about the state of the current webform
+ *
+ * @return AjaxResponse
+ * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+ * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+ * @ingroup callbacks
+ */
+function formFactor(array &$form, FormStateInterface $formState){
+  $response = new AjaxResponse();
+  $mobile_fixed = null;
+  $form['elements']['system_information']['equipment_type']['#value'] = "";
+
+  if($model = $form["elements"]["system_information"]["model"]["#value"]){
+    $term_obj = Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($model);
+
+    //Equipment Type
+    $equipment_id = $term_obj->get('field_equipment_type')->target_id;
+    $equipment_type = "";
+    if($equipment_taxonomy = Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($equipment_id)){
+      $equipment_type = $equipment_taxonomy->get('name')->value . " (" .
+        $equipment_taxonomy->get('tid')->value . ")";
+    }
+    $form['elements']['system_information']['equipment_type']['#value'] = $equipment_type;
+    $mobile_fixed = $term_obj->get('field_mobile_or_fixed')->value;
+
+    // If x ray value exists or else set 0
+    $form['elements']['system_information']['x_ray_tubes']['#value'] = $term_obj->get('field_x_ray_tubes')->value ?
+      $term_obj->get('field_x_ray_tubes')->value : 0;
+  }
+
+  $form['elements']['location']['architectural_room_number']["#required"] = false;
+  $form["elements"]["location"]["architectural_room_number"]["room_id"]["#required"] = false;
+
+  if(!$form["elements"]["location"]["facility_name"]["#value"]){
+    $form["elements"]["location"]["room_label"]["#attributes"] = [
+      'readonly' => 'readonly'
+    ];
+  }
+
+  $form["elements"]["net_new_process_information"]["asset_tag_workstation"]["#access"] = false;
+
+  switch($mobile_fixed){
+    case "workstation":
+      $value = '2';
+      $form["elements"]["system_information"]["read_at_home"]["#wrapper_attributes"]["class"][] = 'ml-1h';
+      $form["elements"]["net_new_process_information"]["asset_tag_workstation"]["#access"] = true;
+      $form["elements"]["system_information"]["read_at_home"]["#required"] = true;
+      $form["elements"]["system_information"]["x_ray_tubes"]["#wrapper_attributes"]["class"][] = "hidden";
+      $form["elements"]["net_new_process_information"]["target_delivery_date_to_site"]["#required"] = true;
+      $form["elements"]["net_new_process_information"]["schedule_delivery_date_to_ep"]["#required"] = true;
+      break;
+    case "mobile":
+      $value = '5';
+      $form["elements"]["location"]["room_label"]["#required"] = false;
+      break;
+    case "fixed":
+      $value = '6';
+      $required = true;
+      $form['elements']['location']['architectural_room_number']["#required"] = $required;
+      $form["elements"]["location"]["architectural_room_number"]["room_id"]["#required"] = $required;
+      $form["elements"]["location"]["room_label"]["#required"] = true;
+      break;
+    default:
+      $form["elements"]["location"]["room_label"]["#required"] = false;
+      $value = 0;
+  }
+
+  $form["elements"]["net_new_process_information"]["phi"]["form_factor"]["#value"] = $value;
+  $form["elements"]["net_new_process_information"]["phi"]["user_control"]["#value"] = $value;
+
+  if($value != 0){
+    $form["elements"]["net_new_process_information"]["#attributes"]["class"][0] = array();
+  }
+
+  if($value != 2){
+    $form["elements"]["system_information"]["read_at_home"]["#wrapper_attributes"]["class"][] = "hidden";
+  }
+
+  $response->addCommand(new ReplaceCommand(".webform-submission-add-form", $form));
+  return $response;
+}
+
+/**
+ * Clears the field element when user selects manufacturer
+ *
+ * @param $element
+ *  The form element
+ * @param $target
+ *  HTML target being modified
+ * @return AjaxResponse|null
+ */
+function clearField($element, $target){
+  //if element is null OR element already has null values, just return
+  if($element == null || in_array(null, $element['#value'])) return null;
+
+  //cycle through the values and clear them
+  $response = new AjaxResponse();
+  foreach($element['#value'] as $key => $value){
+    $value[$key] = "";
+  }
+  $response->addCommand(new ReplaceCommand($target, $element));
+  return $response;
+}
+
+/**
+ * Changes field elements when user selects manufacturer
+ *
+ * Callback for Manufacturer field
+ *
+ * @param array $form
+ *     The web form
+ * @param object $formState
+ *    Information about the state of a form
+ *
+ * @ingroup callbacks
+ * @return AjaxResponse
+ */
+function modelChanged(&$form, $formState){
+  $response = new AjaxResponse();
+  $form['elements']['system_information']['model']['#value'] = '';
+  $form["elements"]["net_new_process_information"]["phi"]["form_factor"]["#default_value"] = false;
+  $form["elements"]["net_new_process_information"]["phi"]["form_factor"]["#value"] = false;
+  $form["elements"]["system_information"]["equipment_type"]['#value'] = '';
+
+  //add readonly for Room Label
+  if($form["elements"]["location"]["facility_name"]["#value"] === ""){
+    $form["elements"]["location"]["room_label"]["#attributes"] = [
+      'readonly' => 'readonly'
+    ];
+  }
+
+  /*
+   * TODO: force read_at_home to be empty. This does not seem to be working.
+   */
+  $form["elements"]["system_information"]["read_at_home"]["No"]["#value"] =
+  $form["elements"]["system_information"]["read_at_home"]["Yes"]["#value"] =
+  $form["elements"]["system_information"]["read_at_home"]["#value"] = "No";
+  $form["elements"]["system_information"]["read_at_home"]["#wrapper_attributes"]["class"][] = 'd-none';
+  $formState->setValue('read_at_home', null);
+  $formState->setRebuild(true);
+
+  //clears architectural room, more dynamic approach using a function clearField()
+  $response = clearField($form['elements']['location']['architectural_room_number'], "#edit-output");
+
+  $response->addCommand(new ReplaceCommand(".form-item-room-label", $form["elements"]["location"]["room_label"]));
+  $response->addCommand(new ReplaceCommand(".form-item-form-factor",
+    $form["elements"]["net_new_process_information"]["phi"]["form_factor"]));
+  $response->addCommand(new ReplaceCommand(".form-item-model",
+    $form['elements']['system_information']['model']));
+  $response->addCommand(new ReplaceCommand("#equipment-type",
+    $form["elements"]["system_information"]["equipment_type"]));
+  $response->addCommand(new ReplaceCommand(".form-item-read-at-home", $form["elements"]["system_information"]["read_at_home"]));
+  $response->addCommand(new ReplaceCommand(".form-item-x-ray-tubes",
+    $form['elements']['system_information']['x_ray_tubes']));
+  return $response;
+}
+
+function findFluoro(&$form, $formState){
+  $response = new AjaxResponse();
+  $equipment_type = $form["elements"]["system_information"]["equipment_type"]['#value'];
+
+  if (strpos($equipment_type, 'Radiographic/Fluoroscopic') === 0 || strpos($equipment_type, 'Fluoroscopic Sys') === 0 || strpos($equipment_type, '"Radiographic/Fluoroscopic') === 0) {
+    $form["elements"]["system_information"]["fluoroscopy_system_type"]["#access"] = true;
+    $form["elements"]["system_information"]["fluoroscopy_system_type"]["#wrapper_attributes"]["class"] = ['flex', 'col-12', 'col-md-5', 'bb-grey', 'js-form-item form-item', 'js-form-type-radios', 'form-type-radios', 'js-form-item-fluoroscopy-system-type', 'form-item-fluoroscopy-system-type'];
+  } else {
+
+    $form["elements"]["system_information"]["fluoroscopy_system_type"]["#wrapper_attributes"]["class"] = ['flex', 'col-12', 'col-md-5', 'bb-grey', 'fluoroscopy-system-type', 'js-form-item form-item' ,'js-form-type-radios', 'form-type-radios', 'js-form-item-fluoroscopy-system-type', 'form-item-fluoroscopy-system-type'];
+  }
+  $formState->setRebuild(true);
+
+  $response->addCommand(new ReplaceCommand(".webform-submission-edit-form", $form));
+  return $response;
+
+}
+
+function facility_change(array &$form, FormStateInterface $formState){
+  $response = new AjaxResponse();
+  $facility_name = $formState->getValue('facility_name');
+  $readAtHome = $formState->getValue('read_at_home');
+
+  //if WorkStation is not read at home
+  if($readAtHome != "Yes"){
+    $form["elements"]["location"]["architectural_room_number"]["#value"]["room_id"]["select"] = "";
+    $form["elements"]["location"]["architectural_room_number"]["room_id"]["#value"] = "";
+    $form["elements"]["location"]["architectural_room_number"]["room_id"]["select"]['#default_value'] = "";
+    $form["elements"]["location"]["architectural_room_number"]["room_id"]["select"]['#value'] = "";
+
+    $room_ids[''] = t('- Select -');
+    // Prepare our text field. check if the example select field has a selected option.
+    if ($facility_name) {
+      $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree('room_id');
+      foreach ($terms as $term) {
+        $term_obj = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($term->tid);
+        if($fac_obj = $term_obj->get('field_facility_id')[0]){
+          $fac_name =  $fac_obj->getValue('target_id');
+          if ($fac_name['target_id'] === $facility_name) {
+            $room_ids[$term_obj->get('name')->value] = $term_obj->get('name')->value;
+          }
+        }
+      }
+    }
+    // Set required to true for architectural room number for fixed model
+    if($formState->getValue('form_factor') == "6") {
+      $form["elements"]["location"]["architectural_room_number"]["#required"] = true;
+    }
+
+    $room_ids['_other_'] = t('New Architectural Room...');
+    $form["elements"]["location"]["architectural_room_number"]["room_id"]["select"]["#options"] = $room_ids;
+    $response->addCommand(new ReplaceCommand("#edit-output",
+      $form["elements"]["location"]["architectural_room_number"]));
+  }
+
+  if($readAtHome){
+    changeReadAtHome($form, $formState);
+  }
+
+  // Return the prepared textfield.
+  $response->addCommand(new InvokeCommand(NULL, 'access', [$facility_name]));
+  return $response;
+}
+
+/*
+ * hook_form_alter()
+ * On submission this hook is called to store values from the $form to the $formState
+ */
+function net_flow_form_submission_alter(&$form, FormStateInterface $formState){
+  $facility = $formState->getValue('facility_name');
+  $readAtHome = $formState->getValue('read_at_home');
+  $room_id = $formState->getValue('architectural_room_number')['room_id'];
+  $manufacturer = $formState->getValue('manufacturer');
+  $model = $formState->getValue('model');
+  $medical_area = $formState->getValue('medical_name');
+
+  /*
+   * Architectural Room
+   */
+
+  //Is it a Read At Home? Architectural Room ID is empty and we need to change to Home Office
+  if($readAtHome == "Yes"){
+    $formState->setValue(array('architectural_room_number', 'room_id'),  'Home Office');
+  }
+  /* Else:
+   * If a room ID does exist, check if exist in our taxonomy
+   * If a room ID is not in our taxonomy, create a new instance
+   */
+  if($room_id !== NULL && $readAtHome !== "Yes"){
+    $terms = taxonomy_term_load_multiple_by_name($room_id, 'room_id');
+    if(empty($terms)){
+      try{
+        Term::create([
+          'vid' => 'room_id',
+          'name' => $room_id,
+          'field_facility_id' => $facility,
+        ])->save();
+      }catch(\Drupal\Core\Entity\EntityStorageException $e){
+        drupal_set_message($e->getMessage(), 'error');
+        return FALSE;
+      }
+    }
+  }
+
+  if(is_numeric($manufacturer)){
+    setTaxonomyValue('manufacturer', $manufacturer, $formState);
+  }
+  if(is_numeric($model)){
+    setTaxonomyValue('model', $model, $formState);
+  }
+  if(is_numeric($facility)){
+    setTaxonomyValue('facility_name', $facility, $formState);
+    $form["elements"]["location"]["facility_name"]["#options"] = [
+      $formState->getValue('facility_name') => $formState->getValue('facility_name')
+    ];
+  }
+  if(is_numeric($medical_area)){
+    setTaxonomyValue('medical_name', $medical_area, $formState);
+  }
+  $formState->setValue('system_no', $form['elements']['system_information']['system_no']['#value']);
+}
+
+
+/*
+ * Implements module_hook_ID_hook_alter()
+ * First web form for net new inventory
+ */
+function net_flow_form_webform_submission_generate_system_number_form_1__add_form_alter(&$form, FormStateInterface &$formState){
+  $queueID = $_REQUEST["queueid"];
+  $processID = MaestroEngine::getProcessIdFromQueueId($queueID);
+  if($parent_id = MaestroEngine::getProcessVariable('maestro_parent_processid', $processID)){
+    $sid = MaestroEngine::getEntityIdentiferByUniqueID($parent_id, 'submission');
+    $webform = \Drupal\webform\Entity\WebformSubmission::load($sid);
+  }
+
+  $form["elements"]["system_information"]["system_no"]["#attributes"]["readonly"] = t('readonly');
+  $form["elements"]["workflow_status"]["#value"] = "Pending Acceptance";
+
+  // Default value for Supported By
+  $form["elements"]["purchase_information"]["supported_by"]["#value"] = "miti";
+  $form["elements"]["system_information"]["equipment_type"]['#disabled'] = false;
+  $form["elements"]["net_new_process_information"]["phi"]["#attributes"]["class"][] = "d-none";
+
+  $form['actions']['submit']['#attributes'] = [
+    'class' => [
+      'use-ajax',
+    ]
+  ];
+
+  $form["elements"]["system_information"]["read_at_home"]['#ajax'] = [
+    'callback' => 'changeReadAtHome',
+    'event' => 'change',
+    'progress' => array('type' => 'none'),
+  ];
+
+  $form['actions']['submit']['#ajax'] = [
+    'callback' => 'submission',
+    'event' => 'click',
+  ];
+  //$form["elements"]["net_new_process_information"]["#attributes"]["class"][] = t('hidden');
+  $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
+  $form['#attached']['library'][] = 'bootstrap_miti/form1';
+  unset($form["elements"]["process_id"], $form["elements"]["queue_id"]);
+
+  if($form['maestro']['process_id']['#default_value']){
+    $processID = $form['maestro']['process_id']['#default_value'];
+  }
+
+  $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_created"]['#required'] = true;
+
+  $form["elements"]["system_information"]["equipment_type"]['#attributes']['readonly'] =
+  $form['elements']['system_information']['x_ray_tubes']['#attributes']['readonly'] = 'readonly';
+
+  /*
+   * TODO: Web form config, add this prefix.
+   * This is used for Ajax callbacks
+   */
+  $form['#prefix'] = '<div id="form-container">';
+  $form['#suffix'] = '</div>';
+
+  /*
+   * Manufacturer field
+   */
+  $form['elements']['system_information']['manufacturer']['#options'] = getTaxonomy('manufacturer');
+  $form['elements']['system_information']['manufacturer']['#ajax'] = [
+    'callback' => 'modelChanged',
+    'event' => 'change',
+  ];
+
+  if($manufacturer = $form["elements"]["system_information"]["manufacturer"]["#default_value"]){
+    $man_terms = getTaxonomy('manufacturer', $manufacturer);
+    $result = array();
+    foreach($man_terms as $id => $term){
+      $result[$id] = $term;
+    }
+    $form['elements']['system_information']['model']['#options'] = $result;
+    $form['elements']['system_information']['model']['#disabled'] = false;
+  }
+  else{
+    $form['elements']['system_information']['model']['#options'] = array();
+    $form['elements']['system_information']['model']['#disabled'] = 'disabled';
+  }
+
+  /*
+   * When User changes Model
+   * get Equipment Type, Form Factor, Architectural Room
+   */
+  $form['elements']['system_information']['model']['#ajax'] = [
+    'callback' => 'formFactor',
+    'event' => 'change',
+  ];
+
+  /*
+   * Medical Area field
+   */
+  $form['elements']['location']['medical_name']['#options'] = getTaxonomy('medical_area');
+  $form['elements']['location']['medical_name']['#weight'] = -2;
+
+  $form['elements']['location']['medical_name']['#ajax'] = [
+    'callback' => 'facility',
+    'event' => 'change',
+  ];
+
+  if($form['elements']['location']['medical_name']["#default_value"]){
+    $form['elements']['location']['facility_name']['#disabled'] = false;
+  }
+  else{
+    $form['elements']['location']['facility_name']['#disabled'] = 'disabled';
+  }
+
+  $form['elements']['location']['facility_name']['#validated'] = 'true';
+
+  $form["elements"]["system_information"]["read_at_home"]['#states'] = [
+    'visible' => [
+      ':input[name="form_factor"]' => ['value' => "2"],
+    ],
+  ];
+
+  $form["elements"]["system_information"]["regional_remote_reading_agreement"]['#states'] = [
+    'visible' => [
+      ':input[name="form_factor"]' => ['value' => "2"],
+    ],
+  ];
+
+  /*
+   * Net New Process Information
+   */
+
+  $form["elements"]["net_new_process_information"]["schedule_delivery_date_to_ep"]['#states']["visible"] = [
+    [
+      [':input[name="form_factor"]' => ['value' => "2"]],
+      'or',
+      [':input[name="form_factor"]' => ['value' => "5"]],
+    ],
+  ];
+
+  $form["elements"]["net_new_process_information"]["asset_tag_workstation"]['#states'] = [
+    'visible' => [
+      ':input[name="form_factor"]' => ['value' => "2"],
+    ],
+  ];
+
+  $form['elements']['location']['facility_name']['#ajax'] = [
+    'callback' => 'facility_change',
+    'event' => 'change',
+    'progress' => [
+      'type' => 'throbber',
+      'message' => t('Loading...'),
+    ]
+  ];
+
+  $form['#attached']['library'][] = 'bootstrap_miti/calendar';
+  $form['#attached']['library'][] = 'bootstrap_miti/webform';
+  $form['#attached']['library'][] = 'bootstrap_miti/generate-system-number';
+  $form['#attached']['library'][] = 'tabs.min.js';
+
+  $form['actions']['submit']['#validate'][] = 'net_flow_form_submission_alter';
+  unset($form['elements']['net_new_process_information']['confirm_delivery_date_to_ep'], $form['actions']['push_back'],
+    $form['elements']['network_information'], $form['elements']['net_new_process_information']['current_facility'],
+    $form['elements']['net_new_process_information']['current_medical_area']
+  );
+}
+
+function net_flow_form_webform_submission_generate_system_number_form_1__edit_form_alter(
+  &$form, FormStateInterface &$formState){
+  $form['#attached']['library'][] = 'bootstrap_miti/webform';
+  $form['#attached']['library'][] = 'bootstrap_miti/calendar';
+
+  /*
+   * Attach Ajax State to Regional Remote Reading Agreement.
+   * It is buggy attaching it through the front side via Web form Build
+   */
+  $form["elements"]["system_information"]["regional_remote_reading_agreement"]['#states'] = [
+    'visible' => [
+      ':input[name="form_factor"]' => ['value' => "2"],
+    ],
+  ];
+
+  $form['elements']['system_information']['equipment_type']['#ajax'] = [
+    'callback' => 'findFluoro',
+    'event' => 'change',
+  ];
+
+
+  $form["elements"]["system_information"]["system_no"]["#attributes"]["readonly"] = t('readonly');
+  $form["elements"]["process_id"]["#value"] = $form['maestro']['process_id']['#default_value'];
+  $form["elements"]["queue_id"]["#value"] = $form["maestro"]["queue_id"]["#default_value"];
+  $processID = $form["elements"]["process_id"]["#value"];
+  $queueID = $form["elements"]["queue_id"]["#value"];
+  $form["elements"]["system_information"]["equipment_type"]['#disabled'] = false;
+  $label = "";
+
+
+  $equipment_type = $form["elements"]["system_information"]["equipment_type"]['#default_value'];
+  if ($term = reset($equipment_type)) {
+    $equipment_type_name = $term['name']['x-default'];
+  }
+
+  if (strpos($equipment_type_name, 'Radiographic/Fluoroscopic') === 0 || strpos($equipment_type_name, 'Fluoroscopic Sys') === 0 || strpos($equipment_type_name, '"Radiographic/Fluoroscopic') === 0) {
+    $form["elements"]["system_information"]["fluoroscopy_system_type"]["#wrapper_attributes"]["class"] = ['flex', 'col-12', 'col-md-5', 'bb-grey', 'js-form-item form-item', 'js-form-type-radios', 'form-type-radios', 'js-form-item-fluoroscopy-system-type', 'form-item-fluoroscopy-system-type'];
+  } else {
+    $form["elements"]["system_information"]["fluoroscopy_system_type"]["#access"] = false;
+  }
+
+  if($queueID){
+    $queueRecord = Drupal::entityTypeManager()->getStorage('maestro_queue')->load($form["maestro"]["queue_id"]["#default_value"]);
+    $label = $queueRecord->task_label->getString();
+    if($label == "Create New System"){
+      net_flow_form_webform_submission_generate_system_number_form_1__add_form_alter($form, $formState);
+      if(empty($form["elements"]["location"]["room_label"]["#default_value"])){
+        $form["elements"]["location"]["architectural_room_number"]["#default_value"]["room_id"] = "";
+      }
+      return;
+    }
+  }
+
+  if($form["elements"]["process_id"]["#value"] === NULL) return;
+
+  //load variables for the form
+  $form_factor = MaestroEngine::getProcessVariable('form_factor', $processID);
+  $workflow_current_stage = MaestroEngine::getProcessVariable('workflow_current_stage', $processID);
+  $templateTask = MaestroEngine::getTemplateTaskByQueueID($queueID);
+  $task_id = $templateTask['id'];
+
+  $xRayTubes = $form["elements"]["system_information"]["x_ray_tubes"]["#default_value"];
+  $user = User::load(\Drupal::currentUser()->id()); //user
+  $form['elements']['system_information']['system_no']['#disabled'] = true;
+
+
+  /*
+   * Fields based on form factor
+   * form_factor : type of equipment
+   * '5' : mobile
+   * '6' : fixed
+   */
+
+  switch($form_factor) {
+    // Workstations
+    case '2':{
+      workstation_flow ($form, $user, $workflow_current_stage, $task_id, $processID);
+      break;
+    }
+    //mobile
+    case '5':{
+      mobile_flow($form, $user, $workflow_current_stage, $task_id, $xRayTubes);
+      break;
+    }
+    //fixed
+    case '6':{
+      fixed_flow($form, $user, $workflow_current_stage, $task_id, $xRayTubes);
+      break;
+    }
+    default:
+      break;
+  }
+
+  if($form_factor == "5" || $form_factor == "6"){
+    mobile_and_or_fixed($form, $user, $workflow_current_stage, $task_id, $xRayTubes);
+  }
+
+  /*
+   * Special Cases
+   * @param task_id : machine_name for maestro_task
+  */
+  switch($task_id){
+    case "recieve_delivery":
+      set_to_warehouse($form);
+      $form["elements"]["net_new_process_information"]["confirm_delivery_date_to_ep"]["#disabled"] = false;
+      break;
+    case "4m":
+      set_to_warehouse($form);
+      break;
+    case "receive_delivery":
+    case "receive_delivery_non_rah":
+    case "9m":
+      $form["elements"]["net_new_process_information"]["current_medical_area"]["#default_value"] =
+        $form["elements"]["location"]["medical_name"]["#default_value"];
+      $form["elements"]["net_new_process_information"]["current_facility"]["#default_value"] =
+        $form["elements"]["location"]["facility_name"]["#default_value"];
+      break;
+    case "5x":
+      if( $form["elements"]["net_new_process_information"]["asset_tag_workstation"]["#default_value"] == "yes"){
+        $form["elements"]["net_new_process_information"]["asset_tag"]["#access"] = true;
+      }
+      $form["elements"]["net_new_process_information"]["asset_tag"]["#access"] = true;
+      $form["elements"]["net_new_process_information"]["asset_tag"]["#disabled"] = FALSE;
+      $form["elements"]["net_new_process_information"]["asset_tag"]["#required"] = TRUE;
+      break;
+    default:
+      break;
+  }
+
+  /*
+   * Fields strictly based on workflow
+   * i.e. form 5x (mobile/fixed share form)
+   */
+  switch($workflow_current_stage){
+    case $workflow_current_stage >= 2 && ($form_factor == "5" || $form_factor == "6"):
+      $form["elements"]["system_information"]["read_at_home"]['#access'] = false;
+      break;
+    default:
+      break;
+  }
+
+  if($workflow_current_stage == "2"){
+    if($user->hasRole('warehouse')){
+      $form['#attached']['library'][] = 'bootstrap_miti/2mb';
+    }
+    $form['#attached']['library'][] = 'bootstrap_miti/calendar';
+    $form['#attached']['library'][] = 'bootstrap_miti/webform_2';
+  }
+
+  if($workflow_current_stage >= "2"){
+    $form['elements']['system_information']['equipment_type']['#disabled'] = TRUE;
+    $form['elements']['location']['architectural_room_number']['#disabled'] = TRUE;
+    $form['elements']['location']['room_label']['#disabled'] = TRUE;
+    unset($form["elements"]["location"]["room_label"]["#states"]["required"]);
+    $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_created"]["#disabled"] = true;
+    /*
+     * TODO: Clean the below code a little bit more
+     */
+    $form['elements']['system_information']['manufacturer']['#disabled'] =
+    $form['elements']['system_information']['model']['#disabled'] =
+    $form['elements']['system_information']['x_ray_tubes']['#disabled'] =
+    $form['elements']['location']['medical_name']['#disabled'] =
+    $form['elements']['location']['facility_name']['#disabled']  =
+    $form['elements']['location']['department']['#disabled'] =
+    $form['elements']['location']['room_id']['#disabled'] =
+    $form['elements']['location']['room_structure']['#disabled'] =
+    $form['elements']['purchase_information']['purchase_order_no_']['#disabled'] =
+    $form['elements']['purchase_information']['purchase_order_upload']['#disabled'] =
+    $form['elements']['purchase_information']['warranty_duration']['#disabled'] =
+    $form["elements"]["location"]["architectural_room_number"]["#webform_composite_elements"]["room_id"]["#disabled"] =
+      $form["elements"]["location"]["architectural_room_number"]["#disabled"]=
+      $form["elements"]["net_new_process_information"]["phi"]['#disabled']  = TRUE;
+    $form["elements"]["purchase_information"]["warranty_duration"]["#required"] = false;
+    $form['#attached']['library'][] = 'bootstrap_miti/not_form_1';
+    $form["elements"]["net_new_process_information"]["asset_tag_workstation"]["#access"] = false;
+  }
+
+  if(($workflow_current_stage == "2") && ($form_factor == "5" || $form_factor == "6")){
+    $form['elements']['system_information']['equipment_type']['#disabled'] = TRUE;
+    $form['elements']['location']['architectural_room_number']['#disabled'] = TRUE;
+    $form['elements']['location']['room_label']['#disabled'] = TRUE;
+  }
+
+
+  // Asset Tag (Active in Form 5X)
+  if($workflow_current_stage >= '5' && $form_factor == "5"){
+    // For all other users later on 5
+    if ($workflow_current_stage > 5 && $label != 'Image WorkStation') {
+      $form['elements']['net_new_process_information']['asset_tag']['#access'] = TRUE;
+      $form['elements']['net_new_process_information']['asset_tag']['#disabled'] = TRUE;
+    }
+  }
+
+  if($workflow_current_stage == "11" && $form_factor == "5"){
+    if(!$user->hasRole('regional_manager')){
+      $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]['#disabled'] = true;
+    }
+    $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]['#access'] = true;
+  }
+
+  // Form 5M and 6F
+  if($workflow_current_stage >= "6"){
+    $form["elements"]["net_new_process_information"]["phi"]["encryption"]['#access'] = true;
+    $form["elements"]["net_new_process_information"]["phi"]["risk"]['#access'] = true;
+    $form["elements"]["net_new_process_information"]["phi"]["removable_media"]['#access'] = true;
+    $form["elements"]["net_new_process_information"]["phi"]["os"]['#access'] = true;
+    $form["elements"]["net_new_process_information"]["phi"]["access_logs"]['#access'] = true;
+    $form["elements"]["net_new_process_information"]["phi"]["anti_virus"]['#access'] = true;
+    $form["elements"]["net_new_process_information"]["phi"]["app_version"]['#access'] = true;
+    if($user->hasRole('service_engineer')){
+      if($form_factor == "5"){
+        $form['#attached']['library'][] = 'bootstrap_miti/5m';
+      }
+
+      $form["elements"]["net_new_process_information"]["phi"]["encryption"]['#disabled'] = false;
+      $form["elements"]["net_new_process_information"]["phi"]["risk"]['#disabled'] = false;
+      $form["elements"]["net_new_process_information"]["phi"]["removable_media"]['#disabled'] = false;
+      $form["elements"]["net_new_process_information"]["phi"]["os"]['#disabled'] = false;
+      $form["elements"]["net_new_process_information"]["phi"]["access_logs"]['#disabled'] = false;
+      $form["elements"]["net_new_process_information"]["phi"]["anti_virus"]['#disabled'] = false;
+      $form["elements"]["net_new_process_information"]["phi"]["app_version"]['#disabled'] = false;
+      $form["elements"]["net_new_process_information"]["phi"]["#required"] = true;
+      $form["elements"]["net_new_process_information"]["phi"]["encryption"]['#required'] = true;
+      $form["elements"]["net_new_process_information"]["phi"]["risk"]['#required'] = true;
+      $form["elements"]["net_new_process_information"]["phi"]["removable_media"]['#required'] = true;
+      $form["elements"]["net_new_process_information"]["phi"]["os"]['#required'] = true;
+      $form["elements"]["net_new_process_information"]["phi"]["access_logs"]['#required'] = true;
+      $form["elements"]["net_new_process_information"]["phi"]["anti_virus"]['#required'] = true;
+      $form["elements"]["net_new_process_information"]["phi"]["app_version"]['#required'] = true;
+
+      $form['actions']['submit']['#ajax'] = [
+        'callback' => 'submissionEdit',
+        'event' => 'click',
+      ];
+
+      $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
+    }
+  }
+
+
+  if($workflow_current_stage > "9" && !($workflow_current_stage == 10 && $user->hasRole('local_pm')) && ($form_factor == "5" || $form_factor == "6")){
+    $form["elements"]["net_new_process_information"]["phi"]["physical_security"]['#access'] = true;
+    $form['elements']['net_new_process_information']['end_to_end_test_date']['#access'] = true;
+    $form['elements']['net_new_process_information']['end_to_end_testing_upload']['#access'] = true;
+    if($form_factor == "5"){
+      $form['elements']['net_new_process_information']['end_to_end_test_date']['#weight'] = 17;
+    }
+    if($user->hasRole('local_iaa')){
+      $form['#attached']['library'][] = 'bootstrap_miti/10x';
+      $form["elements"]["net_new_process_information"]["phi"]["#required"] = true;
+      $form["elements"]["net_new_process_information"]["phi"]["physical_security"]['#required'] = true;
+      $form["elements"]["net_new_process_information"]["phi"]["physical_security"]['#disabled'] = false;
+      $form['elements']['net_new_process_information']['end_to_end_test_date']['#required'] = true;
+      $form['elements']['net_new_process_information']['end_to_end_test_date']['#disabled'] = false;
+      $form['elements']['net_new_process_information']['end_to_end_testing_upload']['#disabled'] = false;
+
+      $form['actions']['submit']['#ajax'] = [
+        'callback' => 'submissionEdit',
+        'event' => 'click',
+      ];
+
+      $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
+    }
+  }
+
+  /*
+   * Form 12A
+   * NOTE: NO X-Rays need to be present for 12A!
+   */
+  if ($workflow_current_stage >= "12") {
+    if($user->hasRole('local_pm')){
+      $form['elements']['net_new_process_information']['first_clinical_use_date']['#access'] = TRUE;
+      $form['elements']['net_new_process_information']['first_clinical_use_date']['#required'] = TRUE;
+      $form['elements']['net_new_process_information']['first_clinical_use_date']['#disabled'] = FALSE;
+
+    }
+    if($user->hasRole('intermediate_clerk') && $xRayTubes != '0'){
+      $form['#attached']['library'][] = 'bootstrap_miti/12b';
+      $form['elements']['net_new_process_information']['state_registration_date']['#access'] = TRUE;
+      $form['elements']['net_new_process_information']['state_registration']['#access'] = TRUE;
+      $form['elements']['net_new_process_information']['state_registration_date']['#required'] = TRUE;
+      $form['elements']['net_new_process_information']['state_registration_date']['#weight'] = 18;
+      $form['elements']['net_new_process_information']['state_registration']['#weight'] = 18;
+    }
+  }
+
+  // PM Assignment
+  if($task_id == 'pm_assignment') {
+    // Get users by role
+    $ids = \Drupal::entityQuery('user')
+      ->condition('status', 1)
+      ->condition('roles', 'service_engineer')
+      ->execute();
+    $users = User::loadMultiple($ids);
+
+    $userlist = [];
+
+    // Vendor Names list
+    $vendor_terms = getTaxonomy('vendor');
+    foreach ($vendor_terms as $id => $term) {
+      $userlist[$id] = $term;
+    }
+    foreach($users as $user) {
+      $username = $user->get('name')->value;
+      $uid = $user->get('uid')->value;
+      $userlist[$username] = $user->get('field_first_name')->getValue()[0]['value'] .' '.$user->get('field_last_name')->getValue()[0]['value'];
+    }
+
+    $form["elements"]["pm_assignment"]["permanently_assign_to"]["#options"] = $userlist;
+    $form["elements"]["net_new_process_information"]["phi"]["#required"] = false;
+    $form["elements"]["net_new_process_information"]["phi"]['#disabled']  = true;
+  }
+
+  $form['elements']['system_information']['manufacturer']['#required']=
+  $form['elements']['system_information']['model']['#required'] =
+  $form['elements']['location']['room_label']['#required'] =
+  $form['elements']['location']['medical_name']['#required'] =
+  $form['elements']['location']['facility_name']['#required'] =
+  $form['elements']['location']['department']['#required'] = false;
+
+  $form['actions']['submit']['#value'] = t('Submit');
+
+  $form['actions']['submit']['#attributes'] = [
+    'class' => [
+      'use-ajax',
+    ]
+  ];
+}
+
+function mobile_and_or_fixed(&$form, $user, $workflow_current_stage, $task_id, $processID){
+  //Mechanical Electrical Safety Test Date
+  if($workflow_current_stage >= 6){
+    $form["elements"]["net_new_process_information"]["mechanical_electrical_safety_test_date"]['#access'] = TRUE;
+    if($task_id == "6x" || $task_id == "delivery_confirmation_number") {
+      $form["elements"]["net_new_process_information"]["mechanical_electrical_safety_test_date"]['#disabled'] =
+      $form["elements"]["net_new_process_information"]["mechanical_electrical_safety_test_upload"]['#disabled'] = false;
+      $form["elements"]["net_new_process_information"]["mechanical_electrical_safety_test_date"]['#required'] = true;
+    }
+  }
+
+  //Mechanical Electrical Safety Test Upload
+  if($workflow_current_stage >= 6 && ($task_id != "10" && $task_id != "12b")){
+    $form["elements"]["net_new_process_information"]["mechanical_electrical_safety_test_upload"]['#access'] = true;
+  }
+}
+
+// Flow for Workstation
+function workstation_flow(&$form, $user, $workflow_current_stage, $task_id, $processID) {
+  $physicist_test = MaestroEngine::getProcessVariable('physicist_test', $processID);
+
+  $form["elements"]["system_information"]["x_ray_tubes"]["#access"] = false;
+  //Serial Number
+  if($workflow_current_stage >= 5){
+    $form["elements"]["system_information"]["serial_number"]["#access"] = true;
+    if($workflow_current_stage == "5"){
+      $form["elements"]["system_information"]["serial_number"]["#disabled"] = false;
+      $form["elements"]["system_information"]["serial_number"]["#required"] = true;
+    }
+  }
+
+  //Read at Home
+  if($workflow_current_stage >= 2){
+    $form["elements"]["system_information"]["read_at_home"]["#access"] = false;
+  }
+
+  //Network Information
+  if($task_id == "2n" && $form["elements"]["system_information"]["read_at_home"]["#default_value"] == "No"){
+    $form["elements"]["network_information"]["#access"] = true;
+    $form["elements"]["network_information"]["#disabled"] = false;
+  }
+
+  if(($form["elements"]["system_information"]["read_at_home"]["#default_value"] == "No" && $workflow_current_stage > 4)){
+    $form["elements"]["network_information"]["#access"] = true;
+    $form["elements"]["network_information"]["#attributes"]["collapse"]["class"][] = "collapse";
+  }
+
+  //Regional Remote Reading Agreement
+  if($workflow_current_stage >= 2){
+    $form["elements"]["system_information"]["regional_remote_reading_agreement"]["#access"] = false;
+  }
+
+  //Home ISP
+  if($task_id == "obtain_home_isp" || $task_id == "complete_acceptance_testing"){
+    $form['elements']['home_isp']['#access'] = true;
+    $form['elements']['home_isp']['assignment']['#default_value'] = 'static';
+  }
+
+  if($workflow_current_stage == "5" || $task_id == "complete_acceptance_testing"){
+    $form['elements']['home_isp']['internet_service_provider']['#disabled'] = true;
+    $form['elements']['home_isp']['ip_address']['#disabled'] = true;
+    $form['elements']['home_isp']['speed_duplex']['#disabled'] = true;
+    $form['elements']['home_isp']['assignment']['#disabled'] = true;
+  }
+
+  //Target Delivery Date to Site/Home Office
+  if($workflow_current_stage >= 2 && $workflow_current_stage < 9){
+    if($form["elements"]["system_information"]["read_at_home"]["#default_value"] === "Yes"){
+      $form["elements"]["net_new_process_information"]["target_delivery_date_to_site"]["#title"] =
+        "Target Delivery Date to Home Office";
+    }
+    $form["elements"]["net_new_process_information"]["target_delivery_date_to_site"]["#access"] =
+    $form["elements"]["net_new_process_information"]["target_delivery_date_to_site"]["#disabled"] = TRUE;
+
+    if($task_id == "confirm_delivery_schedule" || $task_id == "schedule_delivery_to_provider" || $task_id == "schedule_delivery_to_site"){
+      $form["elements"]["net_new_process_information"]["target_delivery_date_to_site"]["#disabled"] = false;
+    }
+  }
+
+  //Target Delivery Date to EP
+  if($workflow_current_stage >= 2 && $workflow_current_stage < 5){
+    $form['elements']['net_new_process_information']['schedule_delivery_date_to_ep']['#access'] = TRUE;
+    $form['elements']['net_new_process_information']['schedule_delivery_date_to_ep']['#disabled'] = TRUE;
+
+    if($task_id == "3_confirm_delivery_date" || $task_id == "acknowledge_delivery_date"
+      || $task_id == "confirm_delivery_rah" || $task_id == "acknowledge_delivery_date_rah"){
+      $form['elements']['net_new_process_information']['schedule_delivery_date_to_ep']['#disabled'] = false;
+    }
+  }
+
+  //Asset Tag Y/N
+  if($workflow_current_stage == 5){
+    $form['elements']['net_new_process_information']['asset_tag_workstation']['#access'] = TRUE;
+    $form['elements']['net_new_process_information']['asset_tag_workstation']['#disabled'] = TRUE;
+  }
+
+  //PHI
+  if($workflow_current_stage >= "2"){
+    $form["elements"]["net_new_process_information"]["phi"]['#disabled'] = true;
+  }
+
+  //Confirmed Delivery Date to EP
+  if($workflow_current_stage >= 4){
+    $form["elements"]["net_new_process_information"]["confirm_delivery_date_to_ep"]["#access"] =
+    $form["elements"]["net_new_process_information"]["confirm_delivery_date_to_ep"]["#disabled"] = true;
+  }
+
+  //Current Facility
+  if($workflow_current_stage >= 4){
+    $form["elements"]["net_new_process_information"]["current_medical_area"]["#access"] =
+    $form['elements']['net_new_process_information']['current_facility']["#access"] = true;
+  }
+
+  //Workstation Image Date
+  if($workflow_current_stage >= 5){
+    $form['#attached']['library'][] = 'bootstrap_miti/5';
+    $form["elements"]["net_new_process_information"]["workstation_image_date"]["#access"] = TRUE;
+  }
+
+  if($workflow_current_stage == 5){
+    $form["elements"]["net_new_process_information"]["workstation_image_date"]['#disabled'] = false;
+    $form["elements"]["net_new_process_information"]["workstation_image_date"]["#required"] = TRUE;
+  }
+
+  //Confirm System Number Sticker Placed
+  if($workflow_current_stage >= 5){
+    $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_placed"]['#access'] = true;
+  }
+  if($workflow_current_stage == 5){
+    $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_placed"]['#disabled'] = false;
+    $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_placed"]['#required'] = true;
+  }
+
+  //Asset Tag
+  if($workflow_current_stage >= 5 && $form["elements"]["net_new_process_information"]["asset_tag_workstation"]["#default_value"] === "yes"){
+    $form["elements"]["net_new_process_information"]["asset_tag"]["#access"] = true;
+    if($workflow_current_stage == 5){
+      $form["elements"]["net_new_process_information"]["asset_tag"]["#disabled"] = false;
+      $form["elements"]["net_new_process_information"]["asset_tag"]["#required"] = true;
+    }
+  }
+
+  //Confirm Asset Tag Sticker Placed
+  if($workflow_current_stage >= 5 && $form["elements"]["net_new_process_information"]["asset_tag_workstation"]["#default_value"] === "yes"){
+    $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]['#access'] = true;
+    if($workflow_current_stage == 5){
+      $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]["#disabled"] = false;
+      $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]["#required"] = true;
+    }
+  }
+
+  //Confirm Delivery Date to Site/Home Office
+  if($workflow_current_stage >= "8"){
+    $form['elements']['net_new_process_information']['delivery_date']['#access'] = TRUE;
+    $form['elements']['net_new_process_information']['delivery_date']['#disabled'] = TRUE;
+    //read at home, change delivery date title to Home Office
+    if($form["elements"]["system_information"]["read_at_home"]["#default_value"] === "Yes"){
+      $form['elements']['net_new_process_information']['delivery_date']['#title'] = "Confirmed Delivery Date to Home Office";
+    }
+  }
+
+  if($workflow_current_stage == "8"){
+    $form['elements']['net_new_process_information']['delivery_date']['#disabled'] = false;
+  }
+
+  //Installation Completion Date
+  if($task_id == "complete_end_to_end_testing" || ($workflow_current_stage >= 10 && $form["elements"]["system_information"]["read_at_home"]["#default_value"] === "Yes")){
+    $form['elements']['net_new_process_information']['installation_completion_date']['#access'] = true;
+  }
+
+  if($task_id == "complete_end_to_end_testing"){
+    $form['elements']['net_new_process_information']['installation_completion_date']['#disabled'] = false;
+  }
+
+
+  //End to End Test Date and End to End Testing Upload
+  if($workflow_current_stage >= 9){
+    $form['elements']['net_new_process_information']['end_to_end_test_date']['#access'] = true;
+    $form['elements']['net_new_process_information']['end_to_end_testing_upload']['#access'] = true;
+
+  }
+
+  if($workflow_current_stage == 9){
+    $form['elements']['net_new_process_information']['end_to_end_test_date']['#required'] = true;
+    $form['elements']['net_new_process_information']['end_to_end_test_date']['#disabled'] = false;
+    $form['elements']['net_new_process_information']['end_to_end_testing_upload']['#disabled'] = false;
+  }
+
+  //Luminance Value and Luminance Value Upload
+  if($task_id === "complete_configuration_and_e2e_testing" || ($workflow_current_stage >= 10 && $physicist_test == "yes")){
+    $form['elements']['net_new_process_information']['luminance_value']['#access'] = true;
+    $form['elements']['net_new_process_information']['luminance_value_report']['#access'] = true;
+  }
+
+  if($task_id === "complete_configuration_and_e2e_testing"){
+    $form['elements']['net_new_process_information']['luminance_value']['#disabled'] = false;
+    $form['elements']['net_new_process_information']['luminance_value_report']['#disabled'] = false;
+    $form['elements']['net_new_process_information']['luminance_value_report']['#required'] = false;
+    $form['elements']['net_new_process_information']['luminance_value_report']['#required'] = false;
+  }
+
+  /*
+  * physicist Acceptance Test Date
+  * physicist Acceptance Test Upload
+  */
+  if($workflow_current_stage >= 10 && $physicist_test == "yes"){
+    $form["elements"]["net_new_process_information"]["physicist_acceptance_test_date"]['#access'] =
+    $form["elements"]["net_new_process_information"]["physicist_acceptance_test_upload"]['#access'] = true;
+  }
+
+  if($workflow_current_stage == 10){
+    $form["elements"]["net_new_process_information"]["physicist_acceptance_test_date"]['#disabled'] =
+    $form["elements"]["net_new_process_information"]["physicist_acceptance_test_upload"]['#disabled'] = false;
+    $form["elements"]["net_new_process_information"]["physicist_acceptance_test_date"]['#required'] = true;
+  }
+
+  //First Clinical Use Date
+  if($workflow_current_stage >= 11){
+    $form['elements']['net_new_process_information']['first_clinical_use_date']['#access'] = TRUE;
+  }
+
+  if($workflow_current_stage == 11){
+    $form['elements']['net_new_process_information']['first_clinical_use_date']['#required'] = TRUE;
+    $form['elements']['net_new_process_information']['first_clinical_use_date']['#disabled'] = FALSE;
+  }
+}
+
+// Flow for Fixed
+function fixed_flow(&$form, $user, $workflow_current_stage, $task_id, $xRayTubes) {
+
+  // Target delivery date to Site (Active in 2F and disabled in 3F and hidden later on) || EP
+  $target_delivery_date_to_site_access = TRUE;
+  $target_delivery_date_to_site_disabled = TRUE;
+
+  // In 3F form
+    if ($workflow_current_stage > "2" && $workflow_current_stage == "3") {
+      $target_delivery_date_to_site_disabled = TRUE;
+    } else {
+      // In 2F
+      if ($workflow_current_stage == "2") {
+        $target_delivery_date_to_site_disabled = FALSE;
+      } else {
+        // All forms after 3F
+        $target_delivery_date_to_site_access = FALSE;
+      }
+    }
+    // Show/Hide the below in all fixed flow
+    $form['elements']['net_new_process_information']['schedule_delivery_date_to_ep']['#access'] = FALSE;
+
+    $form['elements']['net_new_process_information']['target_delivery_date_to_site']['#access'] = $target_delivery_date_to_site_access;
+    $form['elements']['net_new_process_information']['target_delivery_date_to_site']['#disabled'] = $target_delivery_date_to_site_disabled;
+
+
+  // Network Settings (Active in 2F)
+  if ($workflow_current_stage == 2) {
+    $form['elements']['network_information']['network']['#access'] = TRUE;
+    $form['elements']['network_information']['#access'] = TRUE;
+  }
+  if ($workflow_current_stage > 2) {
+    $form['elements']['network_information']['#access'] = TRUE;
+    $form['elements']['network_information']['#disabled'] = TRUE;
+  }
+
+  // Uncrate, Serial Number and Delivery Date (Active in 3F and disabled entire flow)
+  if ($workflow_current_stage >= '3') {
+    $form['elements']['net_new_process_information']['delivery_date']['#access'] = TRUE;
+    $form['elements']['net_new_process_information']['uncreate_date']['#access'] = TRUE;
+    $form['elements']['system_information']['serial_number']['#access'] = TRUE;
+
+    // For the user it is assigned to
+    if ($workflow_current_stage == "3" && $user->hasRole('capital_pm')) {
+      $form['elements']['net_new_process_information']['delivery_date']['#disabled'] = FALSE;
+      $form['elements']['net_new_process_information']['delivery_date']['#required'] = TRUE;
+      $form['elements']['net_new_process_information']['uncreate_date']['#disabled'] = FALSE;
+      $form['elements']['net_new_process_information']['uncreate_date']['#required'] = TRUE;
+      $form['elements']['system_information']['serial_number']['#disabled'] = FALSE;
+      $form["elements"]["system_information"]["serial_number"]["#required"] = true;
+    }
+  }
+
+  // Installation Completion Date (Active in 4F and disabled entire flow)
+  if ($workflow_current_stage >= 4) {
+    $form['elements']['net_new_process_information']['installation_completion_date']['#access'] = TRUE;
+    if ($user->hasRole('capital_pm')) {
+      $form['elements']['net_new_process_information']['installation_completion_date']['#required'] = TRUE;
+      $form['elements']['net_new_process_information']['installation_completion_date']['#disabled'] = FALSE;
+    }
+    if ($workflow_current_stage > "5") {
+      $form['elements']['net_new_process_information']['installation_completion_date']['#disabled'] = TRUE;
+    }
+  }
+
+  // Asset Tag
+  if ($workflow_current_stage > "5") {
+    $form["elements"]["net_new_process_information"]["asset_tag"]["#access"] =
+    $form["elements"]["net_new_process_information"]["asset_tag"]["#disabled"] =true;
+
+    $form["elements"]["net_new_process_information"]["asset_tag"]["#required"] = false;
+  }
+
+  // Form 11F
+  if($workflow_current_stage >= "11"){
+    $form["elements"]["net_new_process_information"]["physicist_acceptance_test_date"]['#access'] =
+    $form["elements"]["net_new_process_information"]["physicist_acceptance_test_upload"]['#access'] =
+    $form["elements"]["net_new_process_information"]["quality_assurance_test_date"]['#access'] =
+    $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_placed"]['#access'] =
+    $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]['#access'] = TRUE;
+
+
+    // Confirm Asset Tag and sysno sticker hidden in 12B (Active in 11F)
+    if(($workflow_current_stage == "12" && $user->hasRole('intermediate_clerk') && $xRayTubes != '0')) {
+      $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_placed"]['#access'] =
+      $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]['#access'] = FALSE;
+    }
+
+    if($user->hasRole('physicist')){
+      $form['#attached']['library'][] = 'bootstrap_miti/6m';
+      $form["elements"]["net_new_process_information"]["physicist_acceptance_test_date"]['#disabled'] =
+      $form["elements"]["net_new_process_information"]["physicist_acceptance_test_upload"]['#disabled'] =
+      $form["elements"]["net_new_process_information"]["quality_assurance_test_date"]['#disabled'] =
+      $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_placed"]['#disabled'] =
+      $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]['#disabled'] = false;
+      $form["elements"]["net_new_process_information"]["physicist_acceptance_test_date"]['#required'] =
+      $form["elements"]["net_new_process_information"]["quality_assurance_test_date"]['#required'] =
+      $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_placed"]['#required'] =
+      $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]['#required'] = true;
+    }
+  }
+}
+
+// Flow for Mobile
+function mobile_flow(&$form, $user, $workflow_current_stage, $task_id, $xRayTubes) {
+  // Target Delivery date to EP (Disabled until Form 5X)
+  if($workflow_current_stage < "6") {
+    $form['elements']['net_new_process_information']['schedule_delivery_date_to_ep']['#access'] = TRUE;
+    $form['elements']['net_new_process_information']['schedule_delivery_date_to_ep']['#disabled'] = TRUE;
+  }
+
+  // Form 2MA & 2MB
+  if($workflow_current_stage >= "2") {
+    if($user->hasRole('warehouse') && $workflow_current_stage == "2") {
+      $form['elements']['net_new_process_information']['confirm_delivery_date_to_ep']['#access'] = TRUE;
+      $form['elements']['net_new_process_information']['confirm_delivery_date_to_ep']['#disabled'] = false;
+      $form['elements']['net_new_process_information']['confirm_delivery_date_to_ep']['#required'] = TRUE;
+      $form["elements"]["network_information"]["#access"] = FALSE;
+    } else {
+      $form["elements"]["network_information"]["#access"] = TRUE;
+    }
+    if($workflow_current_stage > "2") {
+      $form["elements"]["network_information"]["#access"] = $form["elements"]["network_information"]["#disabled"] =true;
+    }
+    if($workflow_current_stage >= 4) {
+      if($workflow_current_stage != "11") {
+        $form['elements']['net_new_process_information']['confirm_delivery_date_to_ep']['#access'] = TRUE;
+        $form['elements']['net_new_process_information']['confirm_delivery_date_to_ep']['#disabled'] = TRUE;
+      }
+    }
+  }
+
+  // Delivery Confirmation No (Active in form 3M and disabled in entire flow)
+  if ($user->hasRole('regional_manager') && $workflow_current_stage == "3") {
+    $form['elements']['net_new_process_information']['delivery_confirmation_no']['#access'] = TRUE;
+    $delivery_confirmation_day = ['G', 'A', 'B', 'C', 'D', 'E', 'F'];
+    $form['elements']['net_new_process_information']['delivery_confirmation_no']['#default_value'] =
+      $delivery_confirmation_day[date('w')] . date('Ymd') . substr($form['elements']['purchase_information']['purchase_order_no_']['#default_value'], -5);
+    $form['elements']['net_new_process_information']['delivery_confirmation_no']['#required'] = TRUE;
+    $form['elements']['net_new_process_information']['delivery_confirmation_no']['#disabled'] = false;
+  }
+
+  // Delivery Confirmation No (Active in form 3M and disabled in entire flow)
+  if($workflow_current_stage > "3") {
+    $form['elements']['net_new_process_information']['delivery_confirmation_no']['#access'] = TRUE;
+    $form['elements']['net_new_process_information']['delivery_confirmation_no']['#disabled'] = TRUE;
+  }
+
+  // Library needed for Network Settings
+  if ($user->hasRole('local_pm') && $workflow_current_stage == "3") {
+    $form['#attached']['library'][] = 'bootstrap_miti/webform_2';
+  }
+
+  // Serial Number, Uncreate Date (Active in Form 4M)
+  // Current Facility is added from set_to_warehouse()
+  if ($workflow_current_stage >= "4") {
+    if($user->hasRole('warehouse') && $workflow_current_stage == "4") {
+      $form['#attached']['library'][] = 'bootstrap_miti/calendar';
+      $form['#attached']['library'][] = 'bootstrap_miti/4m';
+      $form['elements']['system_information']['serial_number']['#access'] = TRUE;
+      $form['elements']['system_information']['serial_number']['#disabled'] = FALSE;
+      $form['elements']['system_information']['serial_number']['#required'] = TRUE;
+      $form['elements']['net_new_process_information']['uncreate_date']['#access'] = TRUE;
+      $form['elements']['net_new_process_information']['uncreate_date']['#disabled'] = FALSE;
+      $form['elements']['net_new_process_information']['uncreate_date']['#required'] = TRUE;
+    }
+
+    // Serial Number (Disabled in all other forms)
+    if ($workflow_current_stage > "4") {
+      $form['elements']['system_information']['serial_number']['#access'] = TRUE;
+      $form['elements']['system_information']['serial_number']['#disabled'] = TRUE;
+      $form['elements']['net_new_process_information']['uncreate_date']['#access'] = TRUE;
+      $form['elements']['net_new_process_information']['uncreate_date']['#disabled'] = TRUE;
+    }
+
+    // Current Facility (Active in 4M and disabled until 9M)
+    if ($workflow_current_stage < "10") {
+      $form['elements']['net_new_process_information']['current_facility']["#access"] = TRUE;
+      $form['elements']['net_new_process_information']['current_facility']["#disabled"] = TRUE;
+    }
+  }
+
+  // Asset tag (Active in 5X)
+  if ($workflow_current_stage == "5") {
+    $form["elements"]["net_new_process_information"]["asset_tag"]["#required"] = true;
+  }
+  if ($workflow_current_stage > "5") {
+    $form["elements"]["net_new_process_information"]["asset_tag"]["#access"] =
+    $form["elements"]["net_new_process_information"]["asset_tag"]["#disabled"] =true;
+
+    $form["elements"]["net_new_process_information"]["asset_tag"]["#required"] = false;
+  }
+
+  // Form 6M
+  if ($workflow_current_stage >= "7") {
+    $form["elements"]["net_new_process_information"]["physicist_acceptance_test_date"]['#access'] =
+    $form["elements"]["net_new_process_information"]["physicist_acceptance_test_upload"]['#access'] =
+    $form["elements"]["net_new_process_information"]["quality_assurance_test_date"]['#access'] =
+    $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_placed"]['#access'] =
+    $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]['#access'] = true;
+
+    if ($user->hasRole('physicist')) {
+      $form['#attached']['library'][] = 'bootstrap_miti/6m';
+      $form["elements"]["net_new_process_information"]["physicist_acceptance_test_date"]['#disabled'] =
+      $form["elements"]["net_new_process_information"]["physicist_acceptance_test_upload"]['#disabled'] =
+      $form["elements"]["net_new_process_information"]["quality_assurance_test_date"]['#disabled'] =
+      $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_placed"]['#disabled'] =
+      $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]['#disabled'] = false;
+      $form["elements"]["net_new_process_information"]["physicist_acceptance_test_date"]['#required'] =
+      $form["elements"]["net_new_process_information"]["quality_assurance_test_date"]['#required'] =
+      $form["elements"]["net_new_process_information"]["confirm_sysno_sticker_placed"]['#required'] =
+      $form["elements"]["net_new_process_information"]["confirm_asset_tag_sticker_placed"]['#required'] = true;
+    }
+  }
+
+  // Target Delivery Date to SIte Active in 7M and 8M
+  if(($workflow_current_stage == "8" && $user->hasRole('local_pm')) || ($workflow_current_stage == "9" && $user->hasRole('warehouse'))){
+
+    $form['#attached']['library'][] = 'bootstrap_miti/7m';
+
+    $form['elements']['net_new_process_information']['target_delivery_date_to_site']['#access'] = true;
+
+    // Updating the state set initially to make it visible
+    $form["elements"]["net_new_process_information"]["target_delivery_date_to_site"]['#states']["visible"] = [
+        [':input[name="form_factor"]' => ['value' => "5"]],
+    ];
+
+    $form['elements']['net_new_process_information']['target_delivery_date_to_site']['#required'] = true;
+    $form['elements']['net_new_process_information']['target_delivery_date_to_site']['#disabled'] = false;
+  }
+
+  if($workflow_current_stage >= "10"){
+    $form['elements']['net_new_process_information']['delivery_date']['#access'] = TRUE;
+    $form['elements']['net_new_process_information']['delivery_date']['#disabled'] = TRUE;
+    $form['elements']['net_new_process_information']['delivery_date']['#weight'] = 17;
+  }
+
+  if($workflow_current_stage == "10" && $user->hasRole('local_pm')){
+    $form['#attached']['library'][] = 'bootstrap_miti/9m';
+    $form['elements']['net_new_process_information']['delivery_date']['#disabled'] = false;
+    $form['elements']['net_new_process_information']['delivery_date']['#required'] = true;
+  }
+}
+
+function changeFacility($form, $formState){
+  $facility = array();
+
+  if($medical_area = $formState->getUserInput()['current_medical_area']){
+    $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')
+      ->loadByProperties(['name' => $medical_area, 'vid' => 'medical_area']);
+    $term = reset($term);
+    $term_id = $term->id();
+    $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree('medical_area', $term_id, 1);
+    foreach ($terms as $term) {
+      $facility[$term->name] = $term->name;
+    }
+    $form['elements']['net_new_process_information']['current_facility']['#options'] = $facility;
+  }
+
+  // Return the altered facility element.
+  return $form['elements']['net_new_process_information']['current_facility'];
+}
+
+function submission(&$form, FormStateInterface $form_state){
+  $response = new AjaxResponse();
+  $read_at_home = $form_state->getValue("read_at_home");
+  if($read_at_home === "Yes"){
+    $form_state->setValue(array('architectural_room_number', 'room_id'), 'Home Office');
+  }
+  $form_state->setRebuild(TRUE);
+  if ($errors = $form_state->getErrors()) {
+    foreach($errors as $error){
+      $argument = $error->getArguments()['@name'];
+      //TODO: too hardcoded, need better conditional.
+      if($argument === 'User Control' || $argument === 'Form Factor' || $argument === 'Risk' ||
+        $argument === 'Encryption'|| $argument === 'Removable Media' || $argument === 'OS' ||
+        $argument === 'App Version' || $argument === 'Access Logs' || $argument === 'Anti-Virus'){
+        $form["elements"]["net_new_process_information"]["phi"]["#errors"][] = t($argument . ' field is required');
+      }
+    }
+    if($medical_area = $form["elements"]["location"]["medical_name"]["#value"]){
+      $fac_terms = getTaxonomy('medical_area', $medical_area);
+      $facilities[''] = t('- Select -');
+      foreach ($fac_terms as $id => $term) {
+        $facilities[$id] = $term;
+      }
+      $form["elements"]["location"]["facility_name"]["#options"] = $facilities;
+    }
+    if($form["elements"]["system_information"]["model"]){
+      try {
+        formFactor($form, $form_state);
+      } catch (\Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException $e) {
+       drupal_set_message('error');
+      } catch (\Drupal\Component\Plugin\Exception\PluginNotFoundException $e) {
+        drupal_set_message('error');
+      }
+    }
+    $response->addCommand(new ReplaceCommand('.webform-submission-generate-system-number-form-1--form', $form));
+  }
+  else{
+    $options = array(
+      'dialogClass' => 'popup-dialog-class',
+      'width' => '300',
+      'height' => '300',
+    );
+    $title = 'Generated System Number: ';
+    $sys_no = $form["elements"]["system_information"]["system_no"]["#value"];
+    $content = 'This is your generated system number: <strong>' . $sys_no .'</strong>';
+    $response->addCommand(new OpenModalDialogCommand($title, $content));
+  }
+  return $response;
+}
+
+function submissionEdit(&$form, FormStateInterface $form_state){
+  $response = new AjaxResponse();
+  $form_state->setRebuild(TRUE);
+  if ($errors = $form_state->getErrors()) {
+    foreach($errors as $error){
+      $argument = $error->getArguments()['@name'];
+      //TODO: other function uses same conditional statement, merge both
+      if($argument === 'Risk' || $argument === 'Encryption'|| $argument === 'Removable Media' || $argument === 'OS' ||
+        $argument === 'App Version' || $argument === 'Access Logs' || $argument === 'Anti-Virus' ||
+        $argument === 'Physical Security'){
+        $form["elements"]["net_new_process_information"]["phi"]["#errors"][] = t($argument . ' field is required');
+      }
+    }
+    $response->addCommand(new ReplaceCommand('.webform-submission-generate-system-number-form-1--form', $form));
+  }else{
+
+    $url = Url::fromRoute('<front>');
+    $command = new RedirectCommand($url->toString());
+    $response->addCommand($command);
+  }
+  return $response;
+}
+
+function net_flow_preprocess_page(&$variables) {
+  $variables['#attached']['library'][] = 'net_flow/global';
+}

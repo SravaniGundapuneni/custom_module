@@ -1,0 +1,17 @@
+name: 'Net Flow'
+description: 'Custom Module for webform'
+type: module
+core_version_requirement: ^8 || ^9
+dependencies:
+  - block
+  - disable_field
+  - field
+  - maestro
+  - maestro_webform
+  - net_new_webform
+  - path
+  - system
+  - text
+  - user
+  - views
+  - webform

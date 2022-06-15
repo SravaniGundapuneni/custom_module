@@ -1,0 +1,7 @@
+excluded:
+  - block.block.bootstrap_barrio_views_block__maestro_entity_identifiers_taskconsole_display
+  - block.block.bootstrap_miti_views_block__maestro_entity_identifiers_taskconsole_display
+  - block.block.views_block__maestro_entity_identifiers_taskconsole_display
+  - block.block.exposedformwebform_submissionspage_1
+  - webform.webform.setup_delivery_form_2f_
+required: true

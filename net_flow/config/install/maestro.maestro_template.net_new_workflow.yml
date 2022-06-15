@@ -1,0 +1,2309 @@
+langcode: en
+status: true
+dependencies: {  }
+id: net_new_workflow
+label: 'Net New Workflow'
+app_group: 0
+canvas_height: 1600
+canvas_width: 1600
+default_workflow_timeline_stage_count: 13
+show_details: false
+validated: true
+views_attached:
+  maestro_entity_identifiers:
+    view_machine_name: maestro_entity_identifiers
+    view_weight: -10
+    view_display: 'taskconsole_display;Task Console Display'
+  maestro_completed_tasks:
+    view_machine_name: maestro_completed_tasks
+    view_weight: -9
+    view_display: default;Master
+variables:
+  initiator:
+    variable_id: initiator
+    variable_value: '0'
+  workflow_timeline_stage_count:
+    variable_id: workflow_timeline_stage_count
+    variable_value: ''
+  workflow_current_stage:
+    variable_id: workflow_current_stage
+    variable_value: ''
+  workflow_current_stage_message:
+    variable_id: workflow_current_stage_message
+    variable_value: ''
+  assigned_by:
+    variable_id: assigned_by
+    variable_value: '0'
+  pushback_var:
+    variable_id: pushback_var
+    variable_value: '0'
+  form_factor:
+    variable_id: form_factor
+    variable_value: '0'
+  x_ray_tubes:
+    variable_id: x_ray_tubes
+    variable_value: '0'
+  isdraft:
+    variable_id: isdraft
+    variable_value: 'no'
+  processid:
+    variable_id: processid
+    variable_value: '0'
+  queueid:
+    variable_id: queueid
+    variable_value: '0'
+  rah:
+    variable_id: rah
+    variable_value: 'no'
+  physicist_test:
+    variable_id: physicist_test
+    variable_value: 'no'
+tasks:
+  start:
+    id: start
+    tasktype: MaestroStart
+    label: Start
+    nextstep: maestro_hook_is_draft
+    nextfalsestep: ''
+    top: '10'
+    left: '30'
+    assignby: fixed
+    assignto: engine
+  end:
+    id: end
+    tasktype: MaestroEnd
+    label: End
+    nextstep: ''
+    nextfalsestep: ''
+    top: '1450'
+    left: '1490'
+    assignby: fixed
+    assignto: engine
+  setup_network_info:
+    id: setup_network_info
+    label: 'Schedule Delivery and Submit Network Information'
+    tasktype: MaestroWebform
+    nextstep: 3f
+    nextfalsestep: ''
+    top: '295'
+    left: '965'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:capital_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 2
+    workflow_status_stage_message: 'Schedule Delivery and Submit Network Information'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  setup_mobile:
+    id: setup_mobile
+    label: 'Submit Network Information'
+    tasktype: MaestroWebform
+    nextstep: 2ma_and_4m
+    nextfalsestep: ''
+    top: '327'
+    left: '447'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 2
+    workflow_status_stage_message: 'Submit Network Information'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  delivery_confirmation_number:
+    id: delivery_confirmation_number
+    label: 'Complete Electrical and Mechanical Safety Test'
+    tasktype: MaestroWebform
+    nextstep: 6m
+    nextfalsestep: ''
+    top: '877'
+    left: '617'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:service_engineer'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 6
+    workflow_status_stage_message: 'Complete Electrical and Mechanical Safety Test'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  confirm_delivery_date:
+    top: '330'
+    left: '40'
+  confirm_delivery:
+    id: confirm_delivery
+    label: 'Confirm Delivery Date'
+    tasktype: MaestroWebform
+    nextstep: create_delivery_confirmation
+    nextfalsestep: ''
+    top: '340'
+    left: '620'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:warehouse'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 2
+    workflow_status_stage_message: 'Confirm Delivery Date'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  2ma_and_4m:
+    id: 2ma_and_4m
+    label: '2MA & 4M & 5M'
+    tasktype: MaestroAnd
+    nextstep: delivery_confirmation_number
+    nextfalsestep: ''
+    top: '760'
+    left: '630'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 3
+    workflow_status_stage_message: 'Processing for Service Engineer'
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  create_delivery_confirmation:
+    id: create_delivery_confirmation
+    label: 'Create Delivery Confirmation Number'
+    tasktype: MaestroWebform
+    nextstep: 4m
+    nextfalsestep: ''
+    top: '430'
+    left: '610'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:regional_manager'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 3
+    workflow_status_stage_message: 'Create Delivery Confirmation Number'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  4m:
+    id: 4m
+    label: 'Receive Delivery'
+    tasktype: MaestroWebform
+    nextstep: '2ma_and_4m,4m_or_3f'
+    nextfalsestep: ''
+    top: '535'
+    left: '615'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:warehouse'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 4
+    workflow_status_stage_message: 'Received Delivery'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  3f:
+    id: 3f
+    label: 'Receive Delivery and Schedule Uncrating'
+    tasktype: MaestroWebform
+    nextstep: '4f,4m_or_3f'
+    nextfalsestep: ''
+    top: '412'
+    left: '962'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:capital_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 3
+    workflow_status_stage_message: 'Receive Delivery and Schedule Uncrating'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  5x:
+    id: 5x
+    label: 'Assign Asset Tag'
+    tasktype: MaestroWebform
+    nextstep: if_mobile_or_fixed
+    nextfalsestep: ''
+    top: '532'
+    left: '1132'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:regional_manager'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 5
+    workflow_status_stage_message: 'Assign Asset Tag'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  4f:
+    id: 4f
+    label: 'Complete Installation'
+    tasktype: MaestroWebform
+    nextstep: 4f_and_5x
+    nextfalsestep: ''
+    top: '415'
+    left: '1115'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:capital_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 4
+    workflow_status_stage_message: 'Complete Installation'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  4f_and_5x:
+    id: 4f_and_5x
+    label: '4F & 5X'
+    tasktype: MaestroAnd
+    nextstep: 6x
+    nextfalsestep: ''
+    top: '30'
+    left: '1460'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+  4m_or_3f:
+    id: 4m_or_3f
+    label: '4M or 3F'
+    tasktype: MaestroOr
+    nextstep: 5x
+    nextfalsestep: ''
+    top: '540'
+    left: '970'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+  if_mobile_or_fixed:
+    id: if_mobile_or_fixed
+    label: 'if Mobile/Fixed'
+    tasktype: MaestroIf
+    nextstep: 2ma_and_4m
+    nextfalsestep: 4f_and_5x
+    top: '540'
+    left: '1320'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: form_factor
+        operator: '='
+        variable_value: '5'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  6x:
+    id: 6x
+    label: 'Complete Mechanical and Electric Safety Test'
+    tasktype: MaestroWebform
+    nextstep: 9m_or_6x
+    nextfalsestep: ''
+    top: '647'
+    left: '1467'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:service_engineer'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 6
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  6m:
+    id: 6m
+    label: 'Complete Acceptance Testing'
+    tasktype: MaestroWebform
+    nextstep: 7m
+    nextfalsestep: ''
+    top: '882'
+    left: '752'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:physicist'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 7
+    workflow_status_stage_message: '6M. Complete Acceptance Testing'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  7m:
+    id: 7m
+    label: 'Schedule Delivery to Site'
+    tasktype: MaestroWebform
+    nextstep: 8m
+    nextfalsestep: ''
+    top: '882'
+    left: '882'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 8
+    workflow_status_stage_message: '7M. Schedule Delivery to Site'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  8m:
+    id: 8m
+    label: 'Confirm Delivery Schedule'
+    tasktype: MaestroWebform
+    nextstep: 9m
+    nextfalsestep: ''
+    top: '885'
+    left: '1015'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:warehouse'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 9
+    workflow_status_stage_message: '8M. Confirm Delivery Schedule'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  9m:
+    id: 9m
+    label: 'Receive Delivery'
+    tasktype: MaestroWebform
+    nextstep: 9m_or_6x
+    nextfalsestep: ''
+    top: '695'
+    left: '1015'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 10
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  9m_or_6x:
+    id: 9m_or_6x
+    label: '9M or 6X'
+    tasktype: MaestroOr
+    nextstep: '10'
+    nextfalsestep: ''
+    top: '780'
+    left: '1480'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+  10_mobile_or_fixed:
+    id: 10_mobile_or_fixed
+    label: 'Mobile or Fixed'
+    tasktype: MaestroIf
+    nextstep: check_mobile_or_fixed
+    nextfalsestep: 11f
+    top: '900'
+    left: '1180'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: form_factor
+        operator: '='
+        variable_value: '5'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  10:
+    id: '10'
+    label: 'Perform End-to-End Testing'
+    tasktype: MaestroWebform
+    nextstep: 10_mobile_or_fixed
+    nextfalsestep: ''
+    top: '767'
+    left: '1167'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_iaa'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 10
+    workflow_status_stage_message: '10. Perform End-to-End Testing'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  11f:
+    id: 11f
+    label: 'Complete Acceptance Testing'
+    tasktype: MaestroWebform
+    nextstep: check_mobile_or_fixed
+    nextfalsestep: ''
+    top: '892'
+    left: '1322'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:physicist'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 11
+    workflow_status_stage_message: '11F. Complete Acceptance Testing'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  x_ray_tubes:
+    id: x_ray_tubes
+    label: 'X-Ray Tubes'
+    tasktype: MaestroIf
+    nextstep: 12a_and_12b
+    nextfalsestep: 12b
+    top: '1040'
+    left: '1350'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: x_ray_tubes
+        operator: '<'
+        variable_value: '0.0'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  12b:
+    id: 12b
+    label: 'Register with State'
+    tasktype: MaestroWebform
+    nextstep: 12a_and_12b
+    nextfalsestep: ''
+    top: '1030'
+    left: '1480'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:intermediate_clerk'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 12
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  12a:
+    id: 12a
+    label: 'Confirm Go-Live'
+    tasktype: MaestroWebform
+    nextstep: activate
+    nextfalsestep: ''
+    top: '1140'
+    left: '1080'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 12
+    workflow_status_stage_message: 'Confirm Go-Live'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  check_mobile_or_fixed:
+    id: check_mobile_or_fixed
+    label: Fixed/Mobile
+    tasktype: MaestroOr
+    nextstep: 'x_ray_tubes,12a'
+    nextfalsestep: ''
+    top: '1040'
+    left: '1180'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+  12a_and_12b:
+    id: 12a_and_12b
+    label: '12C and 12B'
+    tasktype: MaestroAnd
+    nextstep: end_any
+    nextfalsestep: ''
+    top: '1190'
+    left: '1480'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  maestro_hook_is_draft:
+    id: maestro_hook_is_draft
+    label: 'Maestro Draft'
+    tasktype: MaestroBatchFunction
+    nextstep: is_draft
+    nextfalsestep: ''
+    top: '15'
+    left: '195'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    handler: maestro_hook_is_draft
+    assigned: ''
+    runonce: false
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  is_draft:
+    id: is_draft
+    label: 'Not a Draft?'
+    tasktype: MaestroIf
+    nextstep: 'mobile,fixed,is_workstation'
+    nextfalsestep: draft_system_number
+    top: '80'
+    left: '610'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: isdraft
+        operator: '='
+        variable_value: 'no'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  activate:
+    id: activate
+    label: Activate
+    tasktype: MaestroBatchFunction
+    nextstep: pm_assignment
+    nextfalsestep: ''
+    top: '1240'
+    left: '1080'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    handler: maestro_hook_activate
+    assigned: ''
+    runonce: false
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  is_workstation:
+    id: is_workstation
+    label: WorkStation
+    tasktype: MaestroIf
+    nextstep: is_rah_or_not
+    nextfalsestep: ''
+    top: '185'
+    left: '155'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: form_factor
+        operator: '='
+        variable_value: '2'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  draft_system_number:
+    id: draft_system_number
+    label: 'Create New System'
+    tasktype: MaestroWebform
+    nextstep: maestro_hook_is_draft
+    nextfalsestep: ''
+    top: '2'
+    left: '862'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:variable:assigned_by'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 1
+    workflow_status_stage_message: 'Create System Number'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  2n:
+    id: 2n
+    label: 'Submit Network Info'
+    tasktype: MaestroWebform
+    nextstep: 2n_and_4
+    nextfalsestep: ''
+    top: '480'
+    left: '430'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 2
+    workflow_status_stage_message: 'Submit Network Information'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  3_confirm_delivery_date:
+    id: 3_confirm_delivery_date
+    label: 'Confirm Delivery Date'
+    tasktype: MaestroWebform
+    nextstep: 2r_and_3
+    nextfalsestep: ''
+    top: '475'
+    left: '155'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:warehouse'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 2
+    workflow_status_stage_message: 'Confirm Delivery Date'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  2n_and_4:
+    id: 2n_and_4
+    label: '2N and 4'
+    tasktype: MaestroAnd
+    nextstep: recieve_delivery
+    nextfalsestep: ''
+    top: '880'
+    left: '200'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+  acknowledge_delivery_date:
+    id: acknowledge_delivery_date
+    label: 'Acknowledge Delivery Date'
+    tasktype: MaestroWebform
+    nextstep: recieve_delivery
+    nextfalsestep: ''
+    top: '712'
+    left: '92'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:regional_manager'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 3
+    workflow_status_stage_message: 'Acknowledge Delivery Date'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  recieve_delivery:
+    id: recieve_delivery
+    label: 'Receive Delivery'
+    tasktype: MaestroWebform
+    nextstep: image_workstation
+    nextfalsestep: ''
+    top: '880'
+    left: '20'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:warehouse'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 4
+    workflow_status_stage_message: 'Receive Delivery'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  image_workstation:
+    id: image_workstation
+    label: 'Image WorkStation'
+    tasktype: MaestroWebform
+    nextstep: is_rah
+    nextfalsestep: ''
+    top: '1000'
+    left: '20'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_iaa'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 5
+    workflow_status_stage_message: 'Image Workstation'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  schedule_delivery_to_provider:
+    id: schedule_delivery_to_provider
+    label: 'Schedule Delivery To Provider'
+    tasktype: MaestroWebform
+    nextstep: 7r_or_7n
+    nextfalsestep: ''
+    top: '1182'
+    left: '152'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:regional_manager'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 6
+    workflow_status_stage_message: 'Schedule Delivery to Provider'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  schedule_delivery_to_site:
+    id: schedule_delivery_to_site
+    label: 'Schedule Delivery to Site'
+    tasktype: MaestroWebform
+    nextstep: 7r_or_7n
+    nextfalsestep: ''
+    top: '1190'
+    left: '20'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 6
+    workflow_status_stage_message: 'Schedule Delivery to Site'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  confirm_delivery_schedule:
+    id: confirm_delivery_schedule
+    label: 'Confirm Delivery Schedule'
+    tasktype: MaestroWebform
+    nextstep: rah
+    nextfalsestep: ''
+    top: '1435'
+    left: '95'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:warehouse'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 7
+    workflow_status_stage_message: 'Confirm Delivery Schedule'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  receive_delivery:
+    id: receive_delivery
+    label: 'Receive Delivery'
+    tasktype: MaestroWebform
+    nextstep: complete_configuration_and_e2e_testing
+    nextfalsestep: ''
+    top: '1360'
+    left: '430'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:regional_manager'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 8
+    workflow_status_stage_message: 'Receive Delivery'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  is_rah:
+    id: is_rah
+    label: 'Is RAH?'
+    tasktype: MaestroIf
+    nextstep: schedule_delivery_to_provider
+    nextfalsestep: schedule_delivery_to_site
+    top: '1100'
+    left: '20'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: rah
+        operator: '='
+        variable_value: 'Yes'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  7r_or_7n:
+    id: 7r_or_7n
+    label: '7R or 7N'
+    tasktype: MaestroOr
+    nextstep: confirm_delivery_schedule
+    nextfalsestep: ''
+    top: '1335'
+    left: '95'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+  rah:
+    id: rah
+    label: 'Is RAH?'
+    tasktype: MaestroIf
+    nextstep: receive_delivery
+    nextfalsestep: receive_delivery_non_rah
+    top: '1435'
+    left: '245'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: rah
+        operator: '='
+        variable_value: 'Yes'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  receive_delivery_non_rah:
+    id: receive_delivery_non_rah
+    label: 'Receive Delivery'
+    tasktype: MaestroWebform
+    nextstep: complete_end_to_end_testing
+    nextfalsestep: ''
+    top: '1482'
+    left: '422'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 8
+    workflow_status_stage_message: 'Receive Delivery'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  complete_configuration_and_e2e_testing:
+    id: complete_configuration_and_e2e_testing
+    label: 'Complete Configuration and E2E Testing'
+    tasktype: MaestroWebform
+    nextstep: complete_acceptance_testing
+    nextfalsestep: ''
+    top: '1370'
+    left: '590'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:rise'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 9
+    workflow_status_stage_message: 'Complete Configuration and E2E Testing'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  complete_acceptance_testing:
+    id: complete_acceptance_testing
+    label: 'Complete Acceptance Testing'
+    tasktype: MaestroWebform
+    nextstep: 9a_or_10
+    nextfalsestep: ''
+    top: '1370'
+    left: '820'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:physicist'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 10
+    workflow_status_stage_message: 'Complete Acceptance Testing'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  complete_end_to_end_testing:
+    id: complete_end_to_end_testing
+    label: 'Complete End-to-End Testing'
+    tasktype: MaestroWebform
+    nextstep: ws_rxw
+    nextfalsestep: ''
+    top: '1495'
+    left: '605'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_iaa'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 9
+    workflow_status_stage_message: 'Complete End-to-End Testing'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  ws_rxw:
+    id: ws_rxw
+    label: 'DxW, MxW, NXW, or RxW?'
+    tasktype: MaestroIf
+    nextstep: complete_acceptance_testing
+    nextfalsestep: 9a_or_10
+    top: '1490'
+    left: '820'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: physicist_test
+        operator: '='
+        variable_value: 'yes'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  confirm_go_live:
+    id: confirm_go_live
+    label: 'Confirm Go-Live'
+    tasktype: MaestroWebform
+    nextstep: activate_workstation
+    nextfalsestep: ''
+    top: '1440'
+    left: '1190'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:local_pm'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 11
+    workflow_status_stage_message: 'Confirm Go-Live'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  9a_or_10:
+    id: 9a_or_10
+    label: '9A or 10'
+    tasktype: MaestroOr
+    nextstep: confirm_go_live
+    nextfalsestep: ''
+    top: '1440'
+    left: '1030'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+  activate_workstation:
+    id: activate_workstation
+    label: Activate
+    tasktype: MaestroBatchFunction
+    nextstep: end_any
+    nextfalsestep: ''
+    top: '1330'
+    left: '1180'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    handler: maestro_hook_activate
+    assigned: ''
+    runonce: false
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  end_any:
+    id: end_any
+    label: end
+    tasktype: MaestroOr
+    nextstep: end
+    nextfalsestep: ''
+    top: '1340'
+    left: '1490'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+  is_rah_or_not:
+    id: is_rah_or_not
+    label: 'Is RAH?'
+    tasktype: MaestroIf
+    nextstep: 'obtain_home_isp,3_confirm_delivery_date'
+    nextfalsestep: 'confirm_delivery_rah,2n'
+    top: '285'
+    left: '155'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: rah
+        operator: '='
+        variable_value: 'Yes'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  obtain_home_isp:
+    id: obtain_home_isp
+    label: 'Obtain Home ISP'
+    tasktype: MaestroWebform
+    nextstep: 2r_and_3
+    nextfalsestep: ''
+    top: '470'
+    left: '30'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:regional_manager'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 2
+    workflow_status_stage_message: 'Obtain Home ISP'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  mobile:
+    id: mobile
+    label: Mobile
+    tasktype: MaestroIf
+    nextstep: 'setup_mobile,confirm_delivery'
+    nextfalsestep: ''
+    top: '210'
+    left: '620'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: form_factor
+        operator: '='
+        variable_value: '5'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  fixed:
+    id: fixed
+    label: Fixed
+    tasktype: MaestroIf
+    nextstep: setup_network_info
+    nextfalsestep: ''
+    top: '190'
+    left: '970'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      if:
+        method: byvariable
+        variable: form_factor
+        operator: '='
+        variable_value: '6'
+        status: '1'
+    assigned: ''
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: false
+    workflow_status_stage_number: 0
+    workflow_status_stage_message: ''
+    notifications:
+      notification_assignment_subject: null
+      notification_assignment: null
+      notification_reminder_subject: null
+      notification_reminder: null
+      notification_escalation_subject: null
+      notification_escalation: null
+      reminder_after: null
+      escalation_after: null
+  2r_and_3:
+    id: 2r_and_3
+    label: '2R + 3'
+    tasktype: MaestroAnd
+    nextstep: acknowledge_delivery_date
+    nextfalsestep: ''
+    top: '610'
+    left: '100'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+  confirm_delivery_rah:
+    id: confirm_delivery_rah
+    label: 'Confirm Delivery'
+    tasktype: MaestroWebform
+    nextstep: acknowledge_delivery_date_rah
+    nextfalsestep: ''
+    top: '480'
+    left: '290'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:warehouse'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 2
+    workflow_status_stage_message: 'Confirm Delivery'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  acknowledge_delivery_date_rah:
+    id: acknowledge_delivery_date_rah
+    label: 'Acknowledge Delivery Date'
+    tasktype: MaestroWebform
+    nextstep: 2n_and_4
+    nextfalsestep: ''
+    top: '610'
+    left: '290'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'role:fixed:regional_manager'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 3
+    workflow_status_stage_message: 'Acknowledge Delivery Date'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0
+  pm_assignment:
+    id: pm_assignment
+    label: 'PM Assignment'
+    tasktype: MaestroWebform
+    nextstep: 12a_and_12b
+    nextfalsestep: ''
+    top: '1220'
+    left: '1290'
+    assignby: fixed
+    assignto: ''
+    raphael: ''
+    to: ''
+    pointedfrom: ''
+    falsebranch: ''
+    lines: {  }
+    data:
+      unique_id: submission
+      webform_machine_name: generate_system_number_form_1_
+      modal: notmodal
+      skip_webform_handlers: 0
+      webform_nodes_attached_to: none
+      use_nodes_attached: 0
+      webform_nodes_attached_variable: none
+      redirect_to: taskconsole
+      show_edit_form: 1
+    assigned: 'user:fixed:S12345'
+    runonce: false
+    handler: ''
+    showindetail: true
+    participate_in_workflow_status_stage: true
+    workflow_status_stage_number: 12
+    workflow_status_stage_message: 'PM Assignment'
+    notifications:
+      notification_assignment_subject: ''
+      notification_assignment: ''
+      notification_reminder_subject: ''
+      notification_reminder: ''
+      notification_escalation_subject: ''
+      notification_escalation: ''
+      reminder_after: 0
+      escalation_after: 0

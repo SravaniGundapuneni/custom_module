@@ -1,0 +1,18 @@
+table[data-drupal-selector="edit-blocks"] > tbody > tr > td > div,
+table[data-drupal-selector="edit-blocks"] > tbody > tr > td > div:hover{
+  border: none;
+}
+
+table[data-drupal-selector="edit-blocks"] > tbody > tr > td > div,
+table[data-drupal-selector="edit-blocks"] > tbody > tr > td > div:hover{
+  background-color: transparent;
+}
+
+table[data-drupal-selector="edit-blocks"] > tbody > tr > td > div,
+table[data-drupal-selector="edit-blocks"] > tbody > tr > td > div:hover{
+  background-image: none;
+}
+
+table[data-drupal-selector="edit-blocks"] > tbody > tr > td > div:hover {
+  box-shadow: none;
+}
